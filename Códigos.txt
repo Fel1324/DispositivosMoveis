@@ -1,0 +1,339 @@
+PARTE 1 - BACKEND NODE.JS
+
+mkdir music-api
+cd music-api
+
+--------------------------------------
+
+npm init -y
+
+--------------------------------------
+
+npm install express mysql2 cors
+
+--------------------------------------
+
+CREATE DATABASE music_db;
+
+USE music_db;
+
+CREATE TABLE albuns (
+    album_id INT AUTO_INCREMENT PRIMARY KEY,
+    album_titulo VARCHAR(100) NOT NULL,
+    album_artista VARCHAR(100) NOT NULL,
+    album_ano INT NOT NULL,
+    album_capa VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE musicas (
+    musica_id INT AUTO_INCREMENT PRIMARY KEY,
+    album_id INT,
+    musica_titulo VARCHAR(100) NOT NULL,
+    musica_duracao TIME NOT NULL,
+    FOREIGN KEY (album_id) REFERENCES albuns(album_id)
+);
+
+--------------------------------------
+
+INSERT INTO albuns (album_titulo, album_artista, album_ano, album_capa)
+VALUES ('The Dark Side of the Moon', 'Pink Floyd', 1973, '/images/capa-01.png');
+
+SET @album_id = LAST_INSERT_ID();
+
+INSERT INTO musicas (album_id, musica_titulo, musica_duracao)
+VALUES 
+(@album_id, 'Speak to Me', '00:01:30'),
+(@album_id, 'Breathe', '00:02:43'),
+(@album_id, 'On the Run', '00:03:45'),
+(@album_id, 'Time', '00:06:53'),
+(@album_id, 'The Great Gig in the Sky', '00:04:47'),
+(@album_id, 'Money', '00:06:23'),
+(@album_id, 'Us and Them', '00:07:49'),
+(@album_id, 'Any Colour You Like', '00:03:25'),
+(@album_id, 'Brain Damage', '00:03:50'),
+(@album_id, 'Eclipse', '00:02:06');
+
+
+INSERT INTO albuns (album_titulo, album_artista, album_ano, album_capa)
+VALUES ('Abbey Road', 'The Beatles', 1969, '/images/capa-02.png');
+
+SET @album_id = LAST_INSERT_ID();
+
+INSERT INTO musicas (album_id, musica_titulo, musica_duracao)
+VALUES 
+(@album_id, 'Come Together', '00:04:19'),
+(@album_id, 'Something', '00:03:03'),
+(@album_id, 'Maxwell\'s Silver Hammer', '00:03:27'),
+(@album_id, 'Oh! Darling', '00:03:26'),
+(@album_id, 'Octopus\'s Garden', '00:02:51'),
+(@album_id, 'I Want You (She\'s So Heavy)', '00:07:47'),
+(@album_id, 'Here Comes the Sun', '00:03:05'),
+(@album_id, 'Because', '00:02:45'),
+(@album_id, 'You Never Give Me Your Money', '00:04:02'),
+(@album_id, 'Sun King', '00:02:26'),
+(@album_id, 'Mean Mr. Mustard', '00:01:06'),
+(@album_id, 'Polythene Pam', '00:01:12'),
+(@album_id, 'She Came In Through the Bathroom Window', '00:01:57'),
+(@album_id, 'Golden Slumbers', '00:01:31'),
+(@album_id, 'Carry That Weight', '00:01:37'),
+(@album_id, 'The End', '00:02:20'),
+(@album_id, 'Her Majesty', '00:00:23');
+
+INSERT INTO albuns (album_titulo, album_artista, album_ano, album_capa)
+VALUES ('A Night at the Opera', 'Queen', 1975, '/images/capa-03.png');
+
+SET @album_id = LAST_INSERT_ID();
+
+INSERT INTO musicas (album_id, musica_titulo, musica_duracao)
+VALUES 
+(@album_id, 'Death on Two Legs', '00:03:43'),
+(@album_id, 'Lazing on a Sunday Afternoon', '00:01:08'),
+(@album_id, 'I\'m in Love with My Car', '00:03:05'),
+(@album_id, 'You\'re My Best Friend', '00:02:52'),
+(@album_id, '\'39', '00:03:30'),
+(@album_id, 'Sweet Lady', '00:04:01'),
+(@album_id, 'Seaside Rendezvous', '00:02:13'),
+(@album_id, 'The Prophet\'s Song', '00:08:17'),
+(@album_id, 'Love of My Life', '00:03:39'),
+(@album_id, 'Good Company', '00:03:23'),
+(@album_id, 'Bohemian Rhapsody', '00:05:55'),
+(@album_id, 'God Save the Queen', '00:01:18');
+
+INSERT INTO albuns (album_titulo, album_artista, album_ano, album_capa)
+VALUES ('The Final Countdown', 'Europe', 1986, '/images/capa-04.png');
+
+SET @album_id = LAST_INSERT_ID();
+
+INSERT INTO musicas (album_id, musica_titulo, musica_duracao)
+VALUES 
+(@album_id, 'The Final Countdown', '00:05:09'),
+(@album_id, 'Rock the Night', '00:04:06'),
+(@album_id, 'Carrie', '00:04:30'),
+(@album_id, 'Danger on the Track', '00:03:46'),
+(@album_id, 'Ninja', '00:03:47'),
+(@album_id, 'Cherokee', '00:04:13'),
+(@album_id, 'Time Has Come', '00:04:00'),
+(@album_id, 'Heart of Stone', '00:03:47'),
+(@album_id, 'On the Loose', '00:03:08'),
+(@album_id, 'Love Chaser', '00:03:28');
+
+--------------------------------------
+
+index.js
+
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'music_db'
+});
+
+db.connect(err => {
+    if (err) throw err;
+    console.log('MySQL conectado...');
+});
+
+// Rota para obter todos os álbuns
+app.get('/api/albuns', (req, res) => {
+    const sql = 'SELECT * FROM albuns';
+    db.query(sql, (err, results) => {
+        if (err) throw err;
+        res.json(results);
+    });
+});
+
+// Rota para obter detalhes de um álbum específico
+app.get('/api/album/:id', (req, res) => {
+    const sql = 'SELECT * FROM albuns WHERE album_id = ?';
+    db.query(sql, [req.params.id], (err, results) => {
+        if (err) throw err;
+        const album = results[0];
+
+        const sqlMusicas = 'SELECT * FROM musicas WHERE album_id = ?';
+        db.query(sqlMusicas, [req.params.id], (err, musicas) => {
+            if (err) throw err;
+            res.json({ ...album, musicas });
+        });
+    });
+});
+
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
+
+--------------------------------------
+
+http://localhost:5000/api/albuns
+
+http://localhost:5000/api/album/1
+
+--------------------------------------
+
+
+PARTE 2 - FRONTEND REACT
+
+
+/music-app
+│
+├── /public
+│   └── /images
+│       ├── capa-01.png
+│       ├── capa-02.png
+│       ├── capa-03.png
+│       └── capa-04.png
+│
+├── /src
+│   ├── /components
+│   │   ├── AlbumList.js
+│   │   └── AlbumDetail.js
+│   ├── App.js
+│   ├── index.js
+│   └── App.css
+│
+└── package.json
+
+
+--------------------------------------
+
+npx create-react-app music-app
+
+npm install axios
+
+cd music-app
+
+--------------------------------------
+
+components/AlbumList.js
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const AlbumList = ({ onSelectAlbum }) => {
+    const [albuns, setAlbuns] = useState([]);
+
+    useEffect(() => {
+        axios.get('http://localhost:5000/api/albuns')
+            .then(response => setAlbuns(response.data))
+            .catch(error => console.error('Erro ao buscar álbuns:', error));
+    }, []);
+
+    return (
+        <div>
+            <h1>Álbuns</h1>
+            <ul>
+                {albuns.map(album => (
+                    <li key={album.album_id} onClick={() => onSelectAlbum(album.album_id)}>
+                        <img src={album.album_capa} alt={album.album_titulo} width="100" />
+                        <p>{album.album_titulo} - {album.album_artista} ({album.album_ano})</p>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+export default AlbumList;
+
+
+
+--------------------------------------
+
+components/AlbumDetail.js
+
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const AlbumDetail = ({ albumId }) => {
+    const [album, setAlbum] = useState(null);
+
+    useEffect(() => {
+        if (albumId) {
+            axios.get(`http://localhost:5000/api/album/${albumId}`)
+                .then(response => setAlbum(response.data))
+                .catch(error => console.error('Erro ao buscar detalhes do álbum:', error));
+        }
+    }, [albumId]);
+
+    if (!album) return <p>Selecione um álbum para ver os detalhes.</p>;
+
+    return (
+        <div>
+            <h1>{album.album_titulo} - {album.album_artista} ({album.album_ano})</h1>
+            <img src={album.album_capa} alt={album.album_titulo} width="300" />
+            <h2>Músicas</h2>
+            <ul>
+                {album.musicas.map(musica => (
+                    <li key={musica.musica_id}>{musica.musica_titulo} - {musica.musica_duracao}</li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+export default AlbumDetail;
+
+
+--------------------------------------
+
+App.js
+
+import React, { useState } from 'react';
+import AlbumList from './components/AlbumList';
+import AlbumDetail from './components/AlbumDetail';
+import './App.css';
+
+const App = () => {
+    const [selectedAlbumId, setSelectedAlbumId] = useState(null);
+
+    return (
+        <div className="app-container">
+            <AlbumList onSelectAlbum={setSelectedAlbumId} />
+            <AlbumDetail albumId={selectedAlbumId} />
+        </div>
+    );
+};
+
+export default App;
+
+
+--------------------------------------
+
+App.css
+
+.app-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+li img {
+    display: block;
+    margin-bottom: 10px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+--------------------------------------
+
+npm start
+
+http://localhost:3000
